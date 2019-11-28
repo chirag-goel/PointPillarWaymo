@@ -119,6 +119,7 @@ class SimpleDataGenerator(DataProcessor, Sequence):
         self.lidar_files = lidar_files
         self.label_files = label_files
         self.calibration_files = calibration_files
+        #self.on_epoch_end()
 
         assert (calibration_files is None and label_files is None) or \
                (calibration_files is not None and label_files is not None)
@@ -178,8 +179,153 @@ class SimpleDataGenerator(DataProcessor, Sequence):
 
     def on_epoch_end(self):
         shuffled_indices = np.random.permutation(np.arange(0, len(self.lidar_files)))
-        self.lidar_files = self.lidar_files[shuffled_indices]
+        print(shuffled_indices)
+        self.lidar_files = np.array(self.lidar_files)[shuffled_indices]
 
         if self.label_files is not None:
-            self.calibration_files = self.calibration_files[shuffled_indices]
-            self.label_files = self.label_files[shuffled_indices]
+            self.calibration_files = np.array(self.calibration_files)[shuffled_indices]
+            self.label_files = np.array(self.label_files)[shuffled_indices]
+
+class WaymoDataGenerator(DataProcessor, Sequence):
+
+    """ Multiprocessing-safe data generator for training, validation or testing, without fancy augmentation """
+
+    def __init__(self, data_reader: DataReader, batch_size: int, lidar_files: List[str], label_files: List[str] = None,
+                 calibration_files: List[str] = None):
+        super(WaymoDataGenerator, self).__init__()
+        self.data_reader = data_reader
+        self.batch_size = batch_size
+        self.lidar_files = lidar_files
+        # self.calibration_files = calibration_files
+
+
+        # assert (calibration_files is None and label_files is None) or \
+        #        (calibration_files is not None and label_files is not None)
+
+        # if self.calibration_files is not None:
+        #     assert len(self.calibration_files) == len(self.lidar_files)
+        #     assert len(self.label_files) == len(self.lidar_files)
+
+    def __len__(self):
+        # return len(self.lidar_files) // self.batch_size
+        return len(self.lidar_files)*198
+        #return 5
+
+    def __getitem__(self, batch_id: int):
+        # , batch_id: int
+        # file_ids = np.arange(batch_id * self.batch_size, self.batch_size * (batch_id + 1))
+        print("Batch ID : " + str(batch_id))
+        file_id = (batch_id)//198
+        start_index = (batch_id)%198
+        print("File ID : " + str(file_id))
+        print("Start index : " +str(start_index))
+        pillars = []
+        voxels = []
+        occupancy = []
+        position = []
+        size = []
+        angle = []
+        heading = []
+        classification = []
+        file = self.lidar_files[file_id]
+        lidar_points = self.data_reader.read_lidar(file,start_index)
+        labels = self.data_reader.read_label(file,start_index)
+
+        for i in range(len(lidar_points)):
+
+            lidar = lidar_points[i]
+
+            pillars_, voxels_ = self.make_point_pillars(lidar)
+
+            pillars.append(pillars_)
+            voxels.append(voxels_)
+
+            # for label in labels:
+            occupancy_, position_, size_, angle_, heading_, classification_ = self.make_ground_truth(labels)
+
+            occupancy.append(occupancy_)
+            position.append(position_)
+            size.append(size_)
+            angle.append(angle_)
+            heading.append(heading_)
+            classification.append(classification_)
+
+        pillars = np.concatenate(pillars, axis=0)
+        voxels = np.concatenate(voxels, axis=0)
+
+        occupancy = np.array(occupancy)
+        position = np.array(position)
+        size = np.array(size)
+        angle = np.array(angle)
+        heading = np.array(heading)
+        classification = np.array(classification)
+        return [pillars, voxels], [occupancy, position, size, angle, heading, classification]
+        # if self.label_files is not None:
+        #     occupancy = np.array(occupancy)
+        #     position = np.array(position)
+        #     size = np.array(size)
+        #     angle = np.array(angle)
+        #     heading = np.array(heading)
+        #     classification = np.array(classification)
+        #     return [pillars, voxels], [occupancy, position, size, angle, heading, classification]
+        # else:
+        #     return [pillars, voxels]
+
+    def test(self, batch_id: int):
+        # , batch_id: int
+        # file_ids = np.arange(batch_id * self.batch_size, self.batch_size * (batch_id + 1))
+        pillars = []
+        voxels = []
+        occupancy = []
+        position = []
+        size = []
+        angle = []
+        heading = []
+        classification = []
+
+        lidar_points = self.data_reader.read_lidar(self.lidar_files[0])
+        labels = self.data_reader.read_label(self.lidar_files[0])
+
+        for i in range(len(lidar_points)):
+
+            lidar = lidar_points[i]
+
+            pillars_, voxels_ = self.make_point_pillars(lidar)
+
+            pillars.append(pillars_)
+            voxels.append(voxels_)
+
+            # for label in labels:
+            occupancy_, position_, size_, angle_, heading_, classification_ = self.make_ground_truth(labels)
+
+            occupancy.append(occupancy_)
+            position.append(position_)
+            size.append(size_)
+            angle.append(angle_)
+            heading.append(heading_)
+            classification.append(classification_)
+
+        pillars = np.concatenate(pillars, axis=0)
+        voxels = np.concatenate(voxels, axis=0)
+
+        occupancy = np.array(occupancy)
+        position = np.array(position)
+        size = np.array(size)
+        angle = np.array(angle)
+        heading = np.array(heading)
+        classification = np.array(classification)
+
+        return [pillars, voxels], [occupancy, position, size, angle, heading, classification]
+        # if self.label_files is not None:
+        #     occupancy = np.array(occupancy)
+        #     position = np.array(position)
+        #     size = np.array(size)
+        #     angle = np.array(angle)
+        #     heading = np.array(heading)
+        #     classification = np.array(classification)
+        #     return [pillars, voxels], [occupancy, position, size, angle, heading, classification]
+        # else:
+        #     return [pillars, voxels]
+
+    def on_epoch_end(self):
+        print("Epoch ended - Chirag")

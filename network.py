@@ -45,7 +45,9 @@ def build_point_pillar_graph(params: Parameters):
         reshape_shape = (nb_channels, max_pillars)
     else:
         reshape_shape = (max_pillars, nb_channels)
-
+    print(x.shape)
+    print(nb_channels)
+    print(max_pillars)
     x = tf.keras.layers.Reshape(reshape_shape, name="pillars/reshape")(x)
     pillars = tf.keras.layers.Lambda(lambda inp: tf.scatter_nd(inp[0], inp[1],
                                                                (batch_size,) + image_size + (nb_channels,)),

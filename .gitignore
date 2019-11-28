@@ -8,3 +8,10 @@ cmake_example.egg-info/
 dist/
 logs/
 point_pillars.egg-info/
+logs_waymo1/
+logs_old/
+data/
+CMakeFiles/
+cmake_install.cmake
+config.pyc
+point_pillars.cpython-35m-x86_64-linux-gnu.so

@@ -2,8 +2,8 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
-from point_pillars import createPillars, createPillarsTarget, select
-
+from point_pillars import createPillars, createPillarsTarget
+from processors import select
 
 class PointPillarsTest(unittest.TestCase):
 
