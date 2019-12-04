@@ -215,8 +215,8 @@ class WaymoDataGenerator(DataProcessor, Sequence):
         # , batch_id: int
         # file_ids = np.arange(batch_id * self.batch_size, self.batch_size * (batch_id + 1))
         print("Batch ID : " + str(batch_id))
-        file_id = (batch_id)//198
-        start_index = (batch_id)%198
+        file_id = (batch_id)//196
+        start_index = (batch_id)%196
         print("File ID : " + str(file_id))
         print("Start index : " +str(start_index))
         pillars = []

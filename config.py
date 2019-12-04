@@ -59,8 +59,8 @@ class NetworkParameters:
     positive_iou_threshold = 0.6
     negative_iou_threshold = 0.3
     batch_size = 1
-    total_training_epochs = 1
-    learning_rate = 2e-4
+    total_training_epochs = 2
+    learning_rate = 4e-4
     decay_rate = 1e-8
     L1 = 0
     L2 = 0
